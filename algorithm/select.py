@@ -1,3 +1,4 @@
+# encoding=utf8
 def max_k(a):
     k = len(a)//2
     for index in range(k):
@@ -7,8 +8,6 @@ def max_k(a):
     return a[k-1]
 
 def max_k2(a, k):
-    # kuaipai 分治
-    # 
     if len(a) == 0:
         return "shuruweikong"
 
@@ -16,9 +15,9 @@ def max_k2(a, k):
     if index == k:
         return result[k]
     elif k < index:
-        max_k2(result[0:index], k)
+        return max_k2(result[0:index], k)
     elif k > index:
-        max_k2(result[index+1:], k-index-1)
+        return max_k2(result[index+1:], k-index-1)
 
 def paixu(a):
     p = a[0]

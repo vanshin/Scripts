@@ -3,6 +3,9 @@ def get_k(n):
     """ return n/2 """
     return n/2
 
+def printDigit(n):
+    if n > 
+
 def main():
     num_list = [1,-1,100000000]
     for i in num_list:
