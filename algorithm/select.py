@@ -1,4 +1,6 @@
 # encoding=utf8
+import timeit
+import random
 def max_k(a):
     k = len(a)//2
     for index in range(k):
@@ -31,12 +33,33 @@ def paixu(a):
     index = len(left)
     return left+[p]+right, index
 
+def get_test():
+    test = []
+    for i in range(8):
+        j = random.random() * 10
+        test.append(j)
+    return test
+
+def shuchu():
+    print("123")
+
 def main():
     test = [5, 25, 7, 2, 4, 8, 34, 76, 23]
-    test2 = [5, 4, 7, 2, 3, 8]
+    # test2 = [5, 4, 7, 2, 3, 8]
     k = len(test)//2
+    
     new_k = len(test) - k
-    print(max_k2(test, new_k))
+    namespace = {
+        "test2":get_test(),
+        "max_k2":max_k2
+    }
+    t = timeit.Timer("max_k2(test2, 5)", globals=namespace)
+    print(t.timeit(1000))
+    
+
+    # print(timeit.timeit("max_k(get_test())","from __main__ import max_k;from __main__ import get_test"))
+    # print(max_k2(test, new_k))
+    # print(max_k(test))
 
 if __name__ == '__main__':
     main()
