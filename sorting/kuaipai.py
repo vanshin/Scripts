@@ -32,34 +32,22 @@ def insert_sort(l):
 def qsort2(a):
     if len(a) <= 1:
         return a
-    return qsort2([x for x in a[1:] if x > a[0]]) + [a[0]] + qsort2([x for x in a[1:] if x < a[0]])
+    return qsort2([x for x in a[1:] if x < a[0]]) + [a[0]] + qsort2([x for x in a[1:] if x > a[0]])
 
 
-def charu(a):
-    for i in range(len(a)):
-        index = i
-        for j in range(i+1,len(a)):
-            if a[index] > a[j]:
+# def charu(a):
+#     for i in range(len(a)):
+#         index = i
+#         for j in range(i+1,len(a)):
+#             if a[index] > a[j]:
                 
-
-
-
-
-
-
-
-
-
-
-
-
 
 def main():
     a = [7,43,45,68,65,42,3,5,63,4,24,2]
     t = qsort2(a)
     print "1111111111111111111"
-    charu(a)
-    print a
+    # charu(a)
+    print t
 
 if __name__ == '__main__':
     main()

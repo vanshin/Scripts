@@ -53,7 +53,7 @@ def main():
         "test2":get_test(),
         "max_k2":max_k2
     }
-    t = timeit.Timer("max_k2(test2, 5)", globals=namespace)
+    t = timeit.Timer("max_k2(get_test(), 5)", globals=globals())
     print(t.timeit(1000))
     
 
