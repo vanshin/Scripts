@@ -26,7 +26,7 @@ def get_bpath():
     version_info = sys.version_info[0:2]
     if os.name == "posix":
         python_version = "python" + str(version_info[0]) + '.' + str(version_info[1])
-        b_path = "Lib/" + python_version + "/site-packages/pip/models/index.py"
+        b_path = "lib/" + python_version + "/site-packages/pip/models/index.py"
     elif os.name == "nt":
         b_path = "Lib\\site-packages\\pip\\models\\index.py"
     return b_path
