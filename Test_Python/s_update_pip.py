@@ -10,24 +10,29 @@ def get_osinfo():
     os_name = os.name
     pyfile = "Index('https://pypi.douban.com/')"
 
-    if os.name == "posix":
-        pass
-    elif os.name == "nt":
-        pass
-
-        
     
 
-    # if os_info == 'nt'
 def get_env_path():
-    version_info = sys.version_info[0]
-    if version_info == 3:
-        pre_path = input("type the virtualenv path :")
-    elif version_info == 2:
-        pre_path = raw_input("type the virtualenv path :")
+    """ 23兼容 """
+    version_info = sys.version_info[0:2]
+    if version_info[0] == 3:
+        pre_path = input("type the virtualenv path, end with //:")
+    elif version_info[0] == 2:
+        pre_path = raw_input("type the virtualenv path, end with //:")
     return pre_path
 
+def get_bpath():
+    """ 系统兼容 """
+    version_info = sys.version_info[0:2]
+    if os.name == "posix":
+        python_version = "python" + version_info[0] + '.' + version_info[1]
+        b_path = "Lib\\" + python_version + "\\site-packages\\pip\\models\\index.py"
+    elif os.name == "nt":
+        b_path = "Lib\\site-packages\\pip\\models\\index.py"
+    return b_path
+
 def get_pre():
+    """ 获取虚拟环境路径 """
     len_argv = len(sys.argv)
     if len_argv == 1:
         pre_path = get_env_path()
@@ -41,11 +46,9 @@ def main():
     # 定位的需要更改的那一行
     # 执行更改
     pre_path = get_pre()
-    index = "index.py"
-    b_path = "Lib\\site-packages\\pip\\models\\"
+    b_path = get_bpath()
     full_path = os.path.join(pre_path, b_path)
-    index_file = os.path.join(full_path, index)
-    with open(index_file, "r+") as f:
+    with open(full_path, "r+") as f:
         # 读取文件的所有内容
         lines = f.readlines()
         # 将文件的偏移量设置为开始
