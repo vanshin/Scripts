@@ -7,6 +7,13 @@ class star(object):
         self.color = color
         self.x = x
         self.y = y
+class Board(object):
+    def __init__(self, length, width):
+        self.length = length
+        self.width = width
+        self.storage = [[star(random.randint(0,3), x, y) for y in range(5)] for x in range(5)]
+
+    def 
 
 def get_stor():
     stor = [[star(random.randint(0,3), x, y) for y in range(5)] for x in range(5) ]
