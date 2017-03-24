@@ -7,13 +7,28 @@ class star(object):
         self.color = color
         self.x = x
         self.y = y
+
+    def get_around(x, y):
+        """" 获取周围星星的情况 """
+
+
+
 class Board(object):
     def __init__(self, length, width):
         self.length = length
         self.width = width
+        self.start = 0
         self.storage = [[star(random.randint(0,3), x, y) for y in range(5)] for x in range(5)]
 
-    def 
+    def get_star(self, x, y):
+        if x > self.length or x < self.start or y < self.start or y :
+            raise IndexError("chao chu changdu")
+        try:
+            return self.storage[x][y]
+        except Exception as identifier:
+            print(identifier)
+        
+
 
 def get_stor():
     stor = [[star(random.randint(0,3), x, y) for y in range(5)] for x in range(5) ]
