@@ -129,6 +129,12 @@ def touch_one(location, stor, yl_location=None):
     return tmp
 
 def main():
+    info = """
+                使用数字代替颜色，0代表空格，规则等同于消灭星星，
+                被点击的点周围有相同数字的即可消除
+                下标从0开始
+           """
+    print(info)
     stor = get_stor()
     show_stor(stor)
     # keep_del(stor)
@@ -193,9 +199,9 @@ def show_stor(stor):
     for i in range(len(stor[0])):
         for j in range(len(stor)):
             if j == 4:
-                print(stor[j][i].color)
+                print(' ',stor[j][i].color)
             else:
-                print(stor[j][i].color,end='')
+                print(' ',stor[j][i].color,end='')
 
 if __name__ == '__main__':
     main()
