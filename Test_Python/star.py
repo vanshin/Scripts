@@ -1,6 +1,8 @@
 #encoding=utf8
-
+# if sys.version_info[0] == 2:
+from __future__ import print_function
 import random
+import sys
 
 class star(object):
     def __init__(self, color, x, y):
@@ -131,8 +133,11 @@ def main():
     show_stor(stor)
     # keep_del(stor)
     while True:
-        tmp = input("num: ")
-        a,b = tmp.split(",")
+        if sys.version_info[0] == 3:
+            tmp = input("num: ")
+        elif sys.version_info[0] == 2:
+            tmp = raw_input("num: ")
+        a, b = tmp.split(",")
         a = int(a)
         b = int(b)
         li = touch_one2((a,b), stor,[])
