@@ -8,8 +8,7 @@ class star(object):
         self.x = x
         self.y = y
 
-    def get_around(x, y):
-        """" 获取周围星星的情况 """
+
 
 
 
@@ -31,9 +30,65 @@ class Board(object):
 
 
 def get_stor():
-    stor = [[star(random.randint(0,3), x, y) for y in range(5)] for x in range(5) ]
+    stor = [[star(random.randint(1,4), x, y) for y in range(5)] for x in range(5) ]
     return stor
 
+def delete_zero(stor):
+    zero_col = []
+    for i in stor:
+        sum = 0
+        for j in i:
+            sum = j.color + sum
+            if sum == 0:
+                zero_col.append(j.x)
+    for i in zero_col:
+        stor = delete_col(i, stor)
+
+
+def delete_col(col, stor):
+    for item in range(col, 5):
+        for i in range(5):
+            stor[col][i].color = stor[col+1][i].color
+    for i in range(5):
+        stor[4][i].color = 0
+    return stor
+
+def touch_one2(location, stor, yl_stars):
+    a, b = location
+    # if yl_location is not None:
+    #     yl_star = []
+    #     for i in yl_location:
+    #         y_a, y_b = i
+    #         yl_star.append(stor[y_a][y_b])
+    location_star = stor[a][b]
+    location_color = location_star.color
+    a_round = []
+    b_round = []
+    if 0 <= b-1 < 5:
+        a_round.append(b-1)
+    if 0 <= b+1 < 5:
+        a_round.append(b+1)
+    if 0 <= a+1 < 5:
+        b_round.append(a+1)
+    if 0 <= a-1 < 5:
+        b_round.append(a-1)
+    tmp = []
+    for rb in a_round:
+        if stor[a][rb].color == location_color:
+            tmp.append(stor[a][rb])
+    for ra in b_round:
+        if stor[ra][b].color == location_color:
+            tmp.append(stor[ra][b])
+    for star in yl_stars:
+        if star in tmp:
+            tmp.remove(star)
+    if len(tmp) > 0:
+        for st in tmp:
+            yl_stars.append(location_star)
+            tmp = tmp + touch_one2((st.x, st.y), stor, yl_stars)
+    else:
+        return tmp
+    return tmp
 
 
 def touch_one(location, stor, yl_location=None):
@@ -43,38 +98,96 @@ def touch_one(location, stor, yl_location=None):
         yl_star = stor[y_a][y_b]
     location_star = stor[a][b]
     location_color = location_star.color
-    a_round = [b-1, b+1]
-    b_round = [a-1, a+1]
+    a_round = []
+    b_round = []
+    if 0 <= b-1 < 5:
+        a_round.append(b-1)
+    if 0 <= b+1 < 5:
+        a_round.append(b+1)
+    if 0 <= a+1 < 5:
+        b_round.append(a+1)
+    if 0 <= a-1 < 5:
+        b_round.append(a-1)
     tmp = []
     for rb in a_round:
         if stor[a][rb].color == location_color:
             tmp.append(stor[a][rb])
     for ra in b_round:
-        if stor[b][ra].color == location_color:
-            tmp.append(stor[b][ra])
-    if yl_location is not None and yl_star in tmp:
+        if stor[ra][b].color == location_color:
+            tmp.append(stor[ra][b])
+    if yl_location is not None and  yl_star in tmp:
         tmp.remove(yl_star)
-    for st in tmp:
-        if st is None:
-            tmp.remove(st)
-    for st in tmp:
-        tmp.append(touch_one((st.x, st.y), stor, yl_location=location))
-    if len(tmp) == 0:
-        return None
-    tmp.append(location_star)
-    print("123123")
-    print(tmp)
+    if len(tmp) > 0:
+        for st in tmp:
+            tmp = tmp + touch_one((st.x, st.y), stor, yl_location=location)
+    else:
+        return tmp
     return tmp
 
 def main():
-    # stor = get_stor()
-    # for i in stor:
-    #     print("----")
-    #     for j in i:
-    #         print(j.color)
-    # print(touch_one((2,2),stor))
+    stor = get_stor()
+    show_stor(stor)
+    # keep_del(stor)
+    while True:
+        tmp = input("num: ")
+        a,b = tmp.split(",")
+        a = int(a)
+        b = int(b)
+        li = touch_one2((a,b), stor,[])
+        
+        li.append(stor[a][b])
+        li = list(set(li))
+        li = sort_del(li)
+        if len(li) > 1:
+            for i in li:
+                lo = (i.x, i.y)
+                stor = delete(lo, stor)
+        # delete_zero(stor)
+        show_stor(stor)
 
 
+
+def keep_del(stor):
+    while True:
+        tmp = input("num:")
+        a, b = tmp.split(",")
+        a = int(a)
+        b = int(b)
+        stor = delete((a, b), stor)
+        show_stor(stor)
+
+def sort_del(result):
+    x_sort = []
+    new_result = []
+    for i in result:
+        x_sort.append(i.x)
+    x_sort.sort()
+    for x in x_sort:
+        for star in result:
+            if star.x == x:
+                new_result.append(star)
+    return new_result
+
+
+def delete(location, stor):
+    a, b = location
+    stor[a][b].color = 0
+    tmp = []
+    for i in range(b-1,-1,-1):
+        stor[a][i].y = stor[a][i].y + 1
+        tmp.append(stor[a][i])
+    tmp.append(star(0,a,0))
+    for j in range(b,-1,-1):
+        stor[a][j] = tmp[b-j]
+    return stor
+
+def show_stor(stor):
+    for i in range(len(stor[0])):
+        for j in range(len(stor)):
+            if j == 4:
+                print(stor[j][i].color)
+            else:
+                print(stor[j][i].color,end='')
 
 if __name__ == '__main__':
     main()
