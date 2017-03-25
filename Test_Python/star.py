@@ -39,19 +39,21 @@ def delete_zero(stor):
         sum = 0
         for j in i:
             sum = j.color + sum
-            if sum == 0:
-                zero_col.append(j.x)
+        if sum == 0 and j.x < 4:
+            zero_col.append(j.x)
+    zero_col.sort()
     for i in zero_col:
         stor = delete_col(i, stor)
 
 
 def delete_col(col, stor):
-    for item in range(col, 5):
+    for item in range(col, 4):
         for i in range(5):
-            stor[col][i].color = stor[col+1][i].color
+            stor[item][i].color = stor[item+1][i].color
     for i in range(5):
         stor[4][i].color = 0
     return stor
+
 
 def touch_one2(location, stor, yl_stars):
     a, b = location
@@ -134,15 +136,16 @@ def main():
         a = int(a)
         b = int(b)
         li = touch_one2((a,b), stor,[])
-        
         li.append(stor[a][b])
         li = list(set(li))
         li = sort_del(li)
+        for i in li:
+            print("li_so:",i.x,i.y)
         if len(li) > 1:
             for i in li:
                 lo = (i.x, i.y)
                 stor = delete(lo, stor)
-        # delete_zero(stor)
+        delete_zero(stor)
         show_stor(stor)
 
 
@@ -157,14 +160,15 @@ def keep_del(stor):
         show_stor(stor)
 
 def sort_del(result):
-    x_sort = []
+    y_sort = []
     new_result = []
     for i in result:
-        x_sort.append(i.x)
-    x_sort.sort()
-    for x in x_sort:
+        y_sort.append(i.y)
+    y_sort.sort()
+    y_sort = set(y_sort)
+    for y in y_sort:
         for star in result:
-            if star.x == x:
+            if star.y == y:
                 new_result.append(star)
     return new_result
 
@@ -174,11 +178,10 @@ def delete(location, stor):
     stor[a][b].color = 0
     tmp = []
     for i in range(b-1,-1,-1):
-        stor[a][i].y = stor[a][i].y + 1
-        tmp.append(stor[a][i])
-    tmp.append(star(0,a,0))
+        tmp.append(stor[a][i].color)
+    tmp.append(0)
     for j in range(b,-1,-1):
-        stor[a][j] = tmp[b-j]
+        stor[a][j].color = tmp[b-j]
     return stor
 
 def show_stor(stor):
