@@ -4,8 +4,8 @@
 
 def test(a):
     a = 100
-    print a
-    print locals()
+    print(a)
+    print(locals())
 
 def test_li(li=[]):
     li.append(20)
