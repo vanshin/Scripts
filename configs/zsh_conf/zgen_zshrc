@@ -1,0 +1,105 @@
+# if the init scipt doesn't exist
+source "${HOME}/.zgen/zgen.zsh"
+if ! zgen saved; then
+
+  # specify plugins here
+  zgen load chrissicool/zsh-256color
+  zgen load zdharma/fast-syntax-highlighting
+  zgen load psprint/zsh-cmd-architect
+  zgen load zdharma/history-search-multi-word
+  zgen load qoomon/zjump
+ 
+  # generate the init script from plugins above
+  zgen save
+fi
+
+# prompt
+autoload -U colors && colors
+PROMPT="%{$reset_color%}%{$fg[yellow]%}%~%{$reset_color%} %{$fg[red]%}μ's %{$reset_color%} "
+
+# auto cpmpinit
+autoload -U compinit
+compinit
+zstyle ':completion:*' menu select
+setopt completealiases
+
+# alias
+alias sshali='ssh root@118.190.204.241'
+alias sd='bd'
+alias ls='ls --color'
+alias la='ls -la'
+alias ll='ls -l'
+alias cl='clear'
+alias ks='ls'
+alias lsc='ls'
+alias ..='cd ..'
+alias cj='clear'
+alias ip='ipython'
+alias ex='exit'
+alias pt='ptpython'
+alias cleawr='clear'
+alias conf='cd ../conf'
+alias sconf='cd /etc/supervisor/conf.d/'
+alias slog='cd /var/log/supervisor/'
+alias bin='cd ../bin'
+alias space='cd ~/space'
+alias user='cd ~/code/user_api'
+alias wx='cd ~/code/wechat_api'
+alias al='cd ~/code/altools'
+alias code='cd ~/code'
+alias rd='cd ~/code/reading'
+alias mc='cd ~/code/mss_client'
+alias ms='cd ~/code/mss_core'
+alias ssh33='ssh root@45.32.25.33'
+alias sshqf='ssh vanshin@172.100.113.124'
+alias mc127='mycli -uroot -p123456'
+alias mcjd='mycli -uvanshin -pvanshin1111 -h116.196.113.214'
+alias my127='mysql -uroot -p123456'
+alias sshjd='ssh root@116.196.113.214'
+alias ssvjd='ssh vanshin@116.196.113.214'
+export EDITOR=vim
+
+#. $HOME/.zsh/plugins/bd/bd.zsh
+
+#
+# http://zsh.sourceforge.net/Doc/Release/Zsh-Line-Editor.html
+# http://zsh.sourceforge.net/Doc/Release/Zsh-Line-Editor.html#Zle-Builtins
+# http://zsh.sourceforge.net/Doc/Release/Zsh-Line-Editor.html#Standard-Widgets
+
+# Make sure that the terminal is in application mode when zle is active, since
+# only then values from $terminfo are valid
+if (( ${+terminfo[smkx]} )) && (( ${+terminfo[rmkx]} )); then
+  function zle-line-init() {
+    echoti smkx
+  }
+  function zle-line-finish() {
+    echoti rmkx
+  }
+  zle -N zle-line-init
+  zle -N zle-line-finish
+fi
+
+if [[ "${terminfo[kpp]}" != "" ]]; then
+  bindkey "${terminfo[kpp]}" up-line-or-history       # [PageUp] - Up a line of history
+fi
+if [[ "${terminfo[knp]}" != "" ]]; then
+  bindkey "${terminfo[knp]}" down-line-or-history     # [PageDown] - Down a line of history
+fi
+# start typing + [Up-Arrow] - fuzzy find history forward
+if [[ "${terminfo[kcuu1]}" != "" ]]; then
+  autoload -U up-line-or-beginning-search
+  zle -N up-line-or-beginning-search
+  bindkey "${terminfo[kcuu1]}" up-line-or-beginning-search
+fi
+# start typing + [Down-Arrow] - fuzzy find history backward
+if [[ "${terminfo[kcud1]}" != "" ]]; then
+  autoload -U down-line-or-beginning-search
+  zle -N down-line-or-beginning-search
+  bindkey "${terminfo[kcud1]}" down-line-or-beginning-search
+fi
+
+
+
+# mapping
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
