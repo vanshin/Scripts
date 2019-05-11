@@ -1,0 +1,5 @@
+WITH_SSL = False
+HOST = '172.100.113.34'
+PORT = '2990'
+
+
