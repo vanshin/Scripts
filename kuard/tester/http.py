@@ -11,6 +11,9 @@ from prettytable import PrettyTable
 
 class FieldDescriptor(object):
 
+    _all_status = ('exist', ' must')
+    _all_ftype = ('int', 'str')
+
     def __init__(self, status, ftype, name):
 
         self.stats = status
@@ -18,22 +21,18 @@ class FieldDescriptor(object):
         self.name = name
 
     @classmethod
-    def from_struct(self, s, name):
+    def from_struct(cls, s, name):
         '''exist.int: name'''
 
-        if not '.' in s:
+        # 确保数据完整
+        s = str(s).split('.')
+        if len(s) != 2:
             raise ValueError
-        s = s.split('.')
-        if len(s) != 3:
+        if (s[0] not in _all_status) or (s[1] not in _all_ftype):
             raise ValueError
-        self.status = s[0]
-        self.type = s[1]
-        self.name = s[2]
 
-    def is_must(self):
-        if self.status == 'must':
-            return True
-        return False
+        # 实例化
+        return cls(s[0], s[1], name)
 
 class StructData(object):
 
