@@ -1,9 +1,9 @@
-#
-# import sys
-# sys.path.append('/home/vanshin/code/solar_api/bin')
-# sys.path.append('/home/vanshin/code/')
-#
 
+import sys
+sys.path.append('/home/vanshin/code/')
+
+
+import json
 import traceback
 import logging
 
@@ -232,9 +232,11 @@ if __name__ == '__main__':
 
     tcc = ThriftConnConf('apollo', APOLLO_SERVERS, ApolloServer)
     userset = BaseSet.from_obj(tcc)
-    userset.register(tcc)
+    # userset.register(tcc)
 
-    with userset.keep_conn():
-        ret = userset.apollo.ping()
-        ret = userset.apollo.ping()
-        print(ret)
+    ret = userset.user_edit(json.dumps({'userid': '11327', 'licensestat_date': '2019-12-12'}))
+    print(ret)
+
+    # with userset.keep_conn():
+        # ret = userset.apollo.ping()
+        # ret = userset.apollo.ping()

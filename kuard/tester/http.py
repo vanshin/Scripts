@@ -2,115 +2,92 @@
 import copy
 import redis
 import random
-import config
 import requests
 import traceback
 
 from prettytable import PrettyTable
 
+from ..config.config_http import NameMap
 
-class FieldDescriptor(object):
 
-    _all_status = ('exist', ' must')
-    _all_ftype = ('int', 'str')
+class FieldStruct(object):
 
-    def __init__(self, status, ftype, name):
+    def __init__(self, fields):
+        self.fields = fields
+        self.datas = {}
 
-        self.stats = status
-        self.ftype = ftype
-        self.name = name
+        # 准备error flag
+        self.error_flags = {
+            i.name: False for i in self.fields
+            if i.is_must()
+        }
 
-    @classmethod
-    def from_struct(cls, s, name):
-        '''exist.int: name'''
+    def reset_flag(flag_map, flag=False):
+        for _, _flag in flag_map.items():
+            _flag = flag
 
-        # 确保数据完整
-        s = str(s).split('.')
-        if len(s) != 2:
-            raise ValueError
-        if (s[0] not in _all_status) or (s[1] not in _all_ftype):
-            raise ValueError
 
-        # 实例化
-        return cls(s[0], s[1], name)
+    def get_full_data(self):
+        data = {}
+        for field in self.fields:
+            data[field.name] = field.data
+        return data
 
-class StructData(object):
-
-    def __init__(self, sttd):
-        self.attrs = {}
-        self.data = {}
-        self.parse(sttd)
-
-    def parse(self, sttd):
-        for k,v in sttd.items():
-            k = TestAttr(k)
-            self.attrs[k.name] = k.status
-            self.data[k.name] = random.choice(v)
+    def one_must_error(self):
+        for name, flag in self.error_flags:
+            if flag == False:
+                return name
 
     def __iter__(self):
-        ret_code = '2101'
-        yield ({}, ret_code, '空数据')
-        for k,v in self.attrs.items():
-            _data = copy.deepcopy(self.data)
-            if self.attrs[k] != 'must':
-                continue
-            _data.pop(k)
-            yield (_data, ret_code, '必须参数缺少{}'.format(k))
-        yield (self.data, '0000', '有效数据验证')
 
+        for name, flag in self.error_flags:
+            data = self.get_full_data()
+            data.pop(name)
+            yield data
 
+        yield self.get_full_data()
 
 class HttpTester(object):
 
     AUTO_DEL = False
     CHECK_DB = False
 
+    allow_method = ('get', 'post', 'put')
+
     def __init__(self):
 
         self.httper = requests
-        redis_host = getattr(config, 'REDIS_HOST', '127.0.0.1')
-        redis_port = getattr(config, 'REDIS_PORT', '6379')
-        self.redis = redis.Redis(host=redis_host,port=redis_port)
-        self.session_key = 'ktest_sessionid_{}'.format(self.name)
         if not config.WITH_SSL:
             self.host = 'http://' + config.HOST
         else:
             self.host = 'https://' + config.HOST
         self.host += ':' + config.PORT + self.url
-        self.sessionid = self.get_sessionid()
-        if not self.sessionid:
-            raise ValueError
 
-    def get_sessionid(self):
-        try:
-            if not hasattr(self, 'ses_data'):
-                return None
-            sesid = self.redis.get(self.session_key)
-            if sesid:
-                self._set_redis_sesid(sesid)
-                return sesid.decode('utf8')
-            host = 'http://'+config.HOST+':'+config.PORT+self.ses_get_url
-            ret = self.httper.post(host, self.ses_data)
-            ret = ret.json()
-            ret_data = ret.get('data') or {}
-            if 'sessionid' in ret_data:
-                self._set_redis_sesid(ret_data['sessionid'])
-                return ret_data['sessionid']
-            return None
-        except:
-            print(traceback.format_exc())
+        self.struct = FieldStruct(struct)
+
+    def test_auto(self):
+        for i in self.struct:
+            ret = self.api_call(i)
+            print(ret)
+
+    def test(self):
+        funcs = dir(self)
+
+        test_funcs = []
+        for i in funcs:
+            if i.startswith('test_'):
+                test_funcs.append(i)
+
+        for i in test_funcs:
+            getattr(self, i)()
+            self.http_call()
+
 
     def auto_del(self, auto):
         self.AUTO_DEL = auto
 
     def check_db(self, check):
         self.CHECK_DB = check
-
-    def _set_redis_sesid(self, value):
-        self.redis.set(self.session_key, value)
-
-    def _reset_redis_sesid(self):
-        self.redis.set(self.session_key, '')
 
     def fmt_ret(self, params, ret, pre_code):
         respcd = ret['respcd']
@@ -135,12 +112,47 @@ class HttpTester(object):
             print('return data:')
             print(data)
 
-    def api_call(self, data=None):
-        if not data:
-            data = {}
-        http_method = getattr(self.httper, self.method, 'get')
+    def __call__(self):
+        pass
+
+    def http_call(self, data):
+
+        return self._http_call(self.method, data)
+
+    def _http_call(self,
+        method: str='get',
+        data: dict=None,
+        with_ses: bool=True,
+        with_token: bool=False,
+        fmt: str='default'
+    ):
+        '''调用http接口
+
+        params:
+            method: 方法
+            data: 数据
+            with_ses: cookie是否带上session
+            with_token: 是否带上token
+            fmt: 格式化返回方法
+        return:
+            基于fmt
+
+        '''
+
+        if method not in self.allow_method:
+            raise ValueError
+
+        cookies = {}
+        header = {}
+        data = {} if data is None else data
+        if with_ses:
+            cookies = {'sessionid': self.sessionid}
+        if with_token:
+            headers = {'token': self.token}
+
+        func = getattr(self.httper, method)
         try:
-            ret = http_method(self.host, data, cookies={'sessionid': self.sessionid})
+            ret = func(self.host, data, headers={}, cookies={'sessionid': self.sessionid})
             ret = ret.json()
         except:
             print(traceback.format_exc())
@@ -149,11 +161,6 @@ class HttpTester(object):
 
     def http_call(self):
         return self.api_call(self.data)
-
-    def is_0000(self, ret):
-        if ret['respcd'] != '0000':
-            return False
-        return True
 
     def _test_list(self):
         all_datas = [{}]
@@ -191,19 +198,47 @@ class HttpTester(object):
         for data, pre_code in datas:
             self.api_call(data, pre_code)
 
-    def test_auto(self):
-        pass
 
-    def test(self):
-        funcs = dir(self)
+class SessionMixin(object):
 
-        test_funcs = []
-        for i in funcs:
-            if i.startswith('test_'):
-                test_funcs.append(i)
+    def __init__(self):
 
-        for i in test_funcs:
-            getattr(self, i)()
-            self.http_call()
+        redis_host = getattr(config, 'REDIS_HOST', '127.0.0.1')
+        redis_port = getattr(config, 'REDIS_PORT', '6379')
+        self.redis = redis.Redis(host=redis_host,port=redis_port)
+
+        self.session_key = 'ktest_sessionid_{}'.format(self.name)
+
+        self.sessionid = self.get_sessionid()
+        if not self.sessionid:
+            raise ValueError
 
 
+    def _set_redis_sesid(self, value):
+        self.redis.set(self.session_key, value)
+
+    def _reset_redis_sesid(self):
+        self.redis.set(self.session_key, '')
+
+    def get_sessionid(self):
+        try:
+            if not hasattr(self, 'ses_data'):
+                return None
+            sesid = self.redis.get(self.session_key)
+            if sesid:
+                self._set_redis_sesid(sesid)
+                return sesid.decode('utf8')
+            host = 'http://'+config.HOST+':'+config.PORT+self.ses_get_url
+            ret = self.httper.post(host, self.ses_data)
+            ret = ret.json()
+            ret_data = ret.get('data') or {}
+            if 'sessionid' in ret_data:
+                self._set_redis_sesid(ret_data['sessionid'])
+                return ret_data['sessionid']
+            return None
+        except:
+            print(traceback.format_exc())
+
+
+class WebTester(HttpTester):
+    pass

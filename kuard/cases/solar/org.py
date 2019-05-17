@@ -1,5 +1,7 @@
 from .solar import SolarBase
 
+from ...util import Int, Str
+
 class GetOrgList(SolarBase):
 
     method = 'get'
@@ -9,25 +11,44 @@ class GetOrgList(SolarBase):
         'qd_uid': 'exist.int'
     }
 
+    def test_list(self):
+        self.data = {
+            'status': 1,
+            'qd_uid': 11327
+        }
+
 
 class CreateMpconfInfo(SolarBase):
 
     url = '/solar/v1/oper/mpconf/info'
     method = 'post'
 
-    sttd = {
-        'must.int.confmodel': [2,1],
-        'must.int.belong': [0,1,2,],
-        'must.int.chnlcode': [3,14],
-        'must.str.main': ['main_test'],
-        'must.str.cid': ['cidtest'],
-        'must.str.pay_appid': ['payappidtest'],
-        'must.str.menu': ['menu_test'],
-        'maybe.str.appid': ['appid_test'],
-        'maybe.str.appname': ['appname_test'],
-        'exist.str.appkey': ['appkey_test'],
-        'exist.str.uid': ['123,234']
+    struct = {
+        'cid': Str('must', const=(1,2,3)),
+        'uid': Str('any'),
+        'main': Str('must'),
+        'menu': Str('must'),
+        'appid': Str('maybe', const={'confmodel':1}),
+        'appkey': Str('exist'),
+        'belong': Int('must'),
+        'chnlcode': Int('must'),
+        'confmodel': Int('must', const=(1,2)),
+        'pay_appid': Str('must'),
     }
+
+    struct = [
+        Str('cid', 'must', const=(1,2,3)),
+        Str('uid', 'any'),
+        Str('main', 'must'),
+        Str('menu', 'must'),
+        Str('appid', 'maybe', const={'confmodel':1}),
+        Str('appkey', 'exist'),
+        Int('belong', 'must'),
+        Int('chnlcode', 'must'),
+        Int('confmodel', 'must', const=(1,2)),
+        Str('pay_appid', 'must'),
+    ]
+
 
     def test_model_err(self):
         self.case = {
