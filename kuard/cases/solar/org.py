@@ -1,31 +1,31 @@
 from .solar import SolarBase
 
-from ...util import Int, Str
+from tester.kttp import Int, Str
 
-class GetOrgList(SolarBase):
+# class GetOrgList(SolarBase):
 
-    method = 'get'
-    url = '/org/user/list'
-    struct = {
-        'status': 'exist.int',
-        'qd_uid': 'exist.int'
-    }
+    # method = 'get'
+    # url = '/org/user/list'
+    # struct = {
+        # 'status': 'exist.int',
+        # 'qd_uid': 'exist.int'
+    # }
 
-    def test_list(self):
-        self.data = {
-            'status': 1,
-            'qd_uid': 11327
-        }
+    # def test_list(self):
+        # self.data = {
+            # 'status': 1,
+            # 'qd_uid': 11327
+        # }
 
 
 class CreateMpconfInfo(SolarBase):
 
     url = '/solar/v1/oper/mpconf/info'
     method = 'post'
-    datatype = 'form'
+    datatype = 'json'
 
     struct = [
-        Str('cid', 'must', const=(1,2,3)),
+        Str('cid', 'must'),
         Str('uid', 'any'),
         Str('main', 'must'),
         Str('menu', 'must'),

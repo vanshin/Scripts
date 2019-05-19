@@ -5,11 +5,10 @@ import random
 import requests
 import traceback
 
-
-from typing import Any, Iterable
+from typing import Any, Iterable, Callable
 from prettytable import PrettyTable
 
-from ..config.config_http import NameMap
+from config.config_http import NameMap
 
 class Field(object):
 
@@ -30,10 +29,11 @@ class Field(object):
         if self.const is None:
             return self.data
 
-        if isinstance(self.const, Iterable):
+        if isinstance(self.const, tuple):
+            print(self.const)
             return random.choice(self.const)
 
-        if isinstance(self.const, callable):
+        if isinstance(self.const, Callable):
             return self.const()
 
     @property
@@ -53,10 +53,6 @@ class Field(object):
     def correct(self):
         return self.to_data()
 
-    @property
-    def _rs(self, num=4):
-        return uuid.uuid4().hex[:num]
-
 class Str(Field):
 
     def _rs(self, num=4):
@@ -67,7 +63,7 @@ class Str(Field):
         if self.const is None:
             return f'kt_{self.name}_{self._rs()}'
 
-def Int(Field):
+class Int(Field):
 
     @property
     def data(self):
@@ -104,22 +100,19 @@ class FieldStruct(object):
 
 class HttpTester(object):
 
-    AUTO_DEL = False
-    CHECK_DB = False
-
     allow_method = ('get', 'post', 'put')
 
     def __init__(self):
 
         self.httper = requests
         self.struct = FieldStruct(self.struct)
-        self.config = self.load_conf()
+        self.load_conf()
         self.format_host()
 
-    def load_conf_by_name(self):
-        if self.name not in NameMap:
+    def load_conf(self):
+        if self.name not in NameMap.nmap:
             raise ValueError('无此配置文件')
-        self.config = NameMap[self.name]
+        self.config = NameMap.nmap[self.name]
 
     def format_host(self):
         '''格式化host'''
@@ -127,6 +120,7 @@ class HttpTester(object):
         self.scheme = 'http' if not self.config.with_ssl else 'https'
         self.host = self.config.host
         self.port = self.config.port
+        self.base_path = self.config.base_path
 
         self.base_url = f'{self.scheme}://{self.host}:{self.port}/{self.base_path}'
 
@@ -178,11 +172,16 @@ class HttpTester(object):
 
     def http_call(self, data):
 
-        return self._http_call(self.method, data)
+        return self._http_call(
+            data=data,
+            method=self.method,
+            datatype=self.datatype
+        )
 
     def _http_call(self,
         method: str='get',
         data: dict=None,
+        datatype: str='json',
         with_ses: bool=True,
         with_token: bool=False,
         fmt: str='default'

@@ -1,6 +1,6 @@
-from tester import Tester
+from tester.kttp import HttpTester
 
-class SolarBase(Tester):
+class SolarBase(HttpTester):
 
     name = 'solar_api'
 
