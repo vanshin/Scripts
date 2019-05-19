@@ -22,19 +22,7 @@ class CreateMpconfInfo(SolarBase):
 
     url = '/solar/v1/oper/mpconf/info'
     method = 'post'
-
-    struct = {
-        'cid': Str('must', const=(1,2,3)),
-        'uid': Str('any'),
-        'main': Str('must'),
-        'menu': Str('must'),
-        'appid': Str('maybe', const={'confmodel':1}),
-        'appkey': Str('exist'),
-        'belong': Int('must'),
-        'chnlcode': Int('must'),
-        'confmodel': Int('must', const=(1,2)),
-        'pay_appid': Str('must'),
-    }
+    datatype = 'form'
 
     struct = [
         Str('cid', 'must', const=(1,2,3)),
@@ -45,7 +33,7 @@ class CreateMpconfInfo(SolarBase):
         Str('appkey', 'exist'),
         Int('belong', 'must'),
         Int('chnlcode', 'must'),
-        Int('confmodel', 'must', const=(1,2)),
+        Int('confmodel', 'rely', const=(1,2)),
         Str('pay_appid', 'must'),
     ]
 

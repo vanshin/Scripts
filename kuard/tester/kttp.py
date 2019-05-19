@@ -1,51 +1,106 @@
 
-import copy
+import uuid
 import redis
 import random
 import requests
 import traceback
 
+
+from typing import Any, Iterable
 from prettytable import PrettyTable
 
 from ..config.config_http import NameMap
+
+class Field(object):
+
+    _all_need = ('must', 'any', 'maybe', 'rely')
+
+    def __init__(self, name: str, need: str, const: Any=None):
+        self.need = need
+        self.name = name
+        self.const = const
+
+    @property
+    def data(self):
+        pass
+
+    def to_data(self):
+        '''随机可用参数'''
+
+        if self.const is None:
+            return self.data
+
+        if isinstance(self.const, Iterable):
+            return random.choice(self.const)
+
+        if isinstance(self.const, callable):
+            return self.const()
+
+    @property
+    def wrong(self):
+        if self.need == 'must':
+            return None
+        if self.need == 'any':
+            return self._r_data()
+        if self.need == 'maybe':
+            if isinstance(self.const, dict):
+                self.const[self.name] = None
+                return self.const
+        if self.need == 'rely':
+            return self
+
+    @property
+    def correct(self):
+        return self.to_data()
+
+    @property
+    def _rs(self, num=4):
+        return uuid.uuid4().hex[:num]
+
+class Str(Field):
+
+    def _rs(self, num=4):
+        return uuid.uuid4().hex[:num]
+
+    @property
+    def data(self):
+        if self.const is None:
+            return f'kt_{self.name}_{self._rs()}'
+
+def Int(Field):
+
+    @property
+    def data(self):
+        return random.randint(1,10000)
 
 
 class FieldStruct(object):
 
     def __init__(self, fields):
         self.fields = fields
-        self.datas = {}
-
-        # 准备error flag
-        self.error_flags = {
-            i.name: False for i in self.fields
-            if i.is_must()
-        }
-
-    def reset_flag(flag_map, flag=False):
-        for _, _flag in flag_map.items():
-            _flag = flag
-
 
     def get_full_data(self):
         data = {}
         for field in self.fields:
-            data[field.name] = field.data
+            data[field.name] = field.correct
         return data
-
-    def one_must_error(self):
-        for name, flag in self.error_flags:
-            if flag == False:
-                return name
 
     def __iter__(self):
 
-        for name, flag in self.error_flags:
+        for i in self.fields:
             data = self.get_full_data()
-            data.pop(name)
-            yield data
+            if isinstance(i.wrong, dict):
+                data.update(i.wrong)
+                yield data, False
+            elif isinstance(i.wrong, Iterable):
+                for i in i.wrong:
+                    data[i.name] = i.wrong
+                    yield data, False
+            else:
+                data[i.name] = i.wrong
+                yield data, False
 
-        yield self.get_full_data()
+        yield self.get_full_data(), True
 
 class HttpTester(object):
 
@@ -57,21 +112,36 @@ class HttpTester(object):
     def __init__(self):
 
         self.httper = requests
-        if not config.WITH_SSL:
-            self.host = 'http://' + config.HOST
-        else:
-            self.host = 'https://' + config.HOST
-        self.host += ':' + config.PORT + self.url
+        self.struct = FieldStruct(self.struct)
+        self.config = self.load_conf()
+        self.format_host()
 
-        self.struct = FieldStruct(struct)
+    def load_conf_by_name(self):
+        if self.name not in NameMap:
+            raise ValueError('无此配置文件')
+        self.config = NameMap[self.name]
+
+    def format_host(self):
+        '''格式化host'''
+
+        self.scheme = 'http' if not self.config.with_ssl else 'https'
+        self.host = self.config.host
+        self.port = self.config.port
+
+        self.base_url = f'{self.scheme}://{self.host}:{self.port}/{self.base_path}'
 
     def test_auto(self):
-        for i in self.struct:
-            ret = self.api_call(i)
+        for data, rtype in self.struct:
+            ret = self.http_call(data)
             print(ret)
 
-    def test(self):
+    def test_customize(self, name=None):
         funcs = dir(self)
+
+        if name:
+            test_func = getattr(self, 'test_'+name)
+            ret = test_func()
+            return ret
 
         test_funcs = []
         for i in funcs:
@@ -82,12 +152,6 @@ class HttpTester(object):
             getattr(self, i)()
             self.http_call()
 
-
-    def auto_del(self, auto):
-        self.AUTO_DEL = auto
-
-    def check_db(self, check):
-        self.CHECK_DB = check
 
     def fmt_ret(self, params, ret, pre_code):
         respcd = ret['respcd']
@@ -111,9 +175,6 @@ class HttpTester(object):
         else:
             print('return data:')
             print(data)
-
-    def __call__(self):
-        pass
 
     def http_call(self, data):
 
@@ -140,64 +201,25 @@ class HttpTester(object):
         '''
 
         if method not in self.allow_method:
-            raise ValueError
+            raise ValueError('不被允许的http method')
 
+        # 准备数据
         cookies = {}
-        header = {}
+        headers = {}
         data = {} if data is None else data
         if with_ses:
             cookies = {'sessionid': self.sessionid}
         if with_token:
             headers = {'token': self.token}
 
+        # 调用
         func = getattr(self.httper, method)
         try:
-            ret = func(self.host, data, headers={}, cookies={'sessionid': self.sessionid})
+            ret = func(self.host, data, headers=headers, cookies=cookies)
             ret = ret.json()
         except:
             print(traceback.format_exc())
-        # 参数 实际返回 预定返回
         return ret
-
-    def http_call(self):
-        return self.api_call(self.data)
-
-    def _test_list(self):
-        all_datas = [{}]
-        full_data = {}
-        for k,v in self.sttd.items():
-            one_data = {}
-            k = TestAttr(k)
-            one_data[k.name] = random.choice(v)
-            full_data[k.name] = random.choice(v)
-            all_datas.append(one_data)
-        for i in all_datas:
-            ret = self.api_call(i)
-            if not self.is_0000(ret):
-                print('test api_type {} failed, return {}'.format(
-                    self.api_type, ret.get('respcd')))
-
-    def _test_create(self):
-        datas = StructData(self.sttd)
-        for data, pre_code, descr in datas:
-            self.api_call(data)
-            db_check_desc = ''
-            if self.CHECK_DB:
-                table = Tabler.from_info(self.db_info)
-                if table.is_exist(data):
-                    db_check_desc = '成功-数据库存在'
-                else:
-                    self.auto_del(False)
-                    db_check_desc('失败-数据库不存在')
-            if self.AUTO_DEL:
-                table = Tabler.from_info(self.db_info)
-                table.del_one(data)
-
-    def _test_update(self):
-        datas = StructData(self.sttd)
-        for data, pre_code in datas:
-            self.api_call(data, pre_code)
-
 
 class SessionMixin(object):
 
@@ -240,5 +262,5 @@ class SessionMixin(object):
             print(traceback.format_exc())
 
 
-class WebTester(HttpTester):
+if __name__ == '__main__':
     pass

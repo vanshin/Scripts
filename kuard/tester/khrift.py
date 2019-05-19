@@ -14,7 +14,7 @@ from thrift.Thrift import TException
 from qfcommon3.server.client import ThriftClient
 from qfcommon3.thriftclient.apollo.ttypes import ApolloException
 
-from excepts import ThirdError, ServerError, ParamError
+from util.excepts import ThirdError, ServerError, ParamError
 
 log = logging.getLogger()
 
@@ -225,16 +225,18 @@ def with_log(func):
 
 if __name__ == '__main__':
 
-
+    print('kk')
     from qfcommon3.thriftclient.apollo import ApolloServer
 
     APOLLO_SERVERS = [{'addr': ('172.100.113.34', 6900), 'timeout': 5000}, ]
 
+    print('kk')
     tcc = ThriftConnConf('apollo', APOLLO_SERVERS, ApolloServer)
     userset = BaseSet.from_obj(tcc)
     # userset.register(tcc)
 
     ret = userset.user_edit(json.dumps({'userid': '11327', 'licensestat_date': '2019-12-12'}))
+    print('kk')
     print(ret)
 
     # with userset.keep_conn():
