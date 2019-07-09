@@ -1,4 +1,5 @@
 
+import json
 import uuid
 import redis
 import random
@@ -8,7 +9,7 @@ import traceback
 from typing import Any, Iterable, Callable
 from prettytable import PrettyTable
 
-from config.config_http import NameMap
+from config.config_http import NameMap, BaseConf
 
 class Field(object):
 
@@ -108,21 +109,97 @@ class HttpTester(object):
         self.struct = FieldStruct(self.struct)
         self.load_conf()
         self.format_host()
+        self.make_storer()
 
     def load_conf(self):
         if self.name not in NameMap.nmap:
             raise ValueError('无此配置文件')
-        self.config = NameMap.nmap[self.name]
+        self.app_config = NameMap.nmap[self.name]
+        self.config = BaseConf
+        self.config.cookie_key = f'http_tester:{self.name}:cookie'
+        self.config.header_key = f'http_tester:{self.name}:header'
+
+    def http_call(self, data):
+
+        self.before_http_call()
+
+        ret = self._http_call(
+            data=data,
+            method=self.method,
+            datatype=self.datatype
+        )
+
+        self.after_http_call()
+
+        return ret
+
+    def before_http_call(self):
+        '''before hock'''
+        pass
+
+    def after_http_call(self):
+        '''after hock'''
+        pass
+
+    def get_cookies(self):
+        pass
+
+    def _http_call(self,
+        method: str='get',
+        data: dict=None,
+        datatype: str='json',
+        fmt: str='default'
+        headers: dict=None,
+        cookies: dict=None,
+    ):
+        '''调用http接口
+
+        准备header cookie
+
+        params:
+            method: 方法
+            data: 数据
+            datatype: 数据封装方式
+            fmt: 格式化返回方法
+        return:
+            基于fmt
+
+        '''
+
+        if method not in self.allow_method:
+            raise ValueError('不被允许的http method')
+
+        # 准备数据
+        data = {} if data is None else data
+        headers = {} if headers is None else headers
+        cookies = {} if cookies is None else cookies
+        cookies.update(self.get_cookies())
+
+        if datatype == 'json':
+            headers['content-type'] = 'application/json'
+            data = json.dumps(data)
+
+        # 调用
+        func = getattr(self.httper, method)
+        try:
+            ret = func(self.host, data, headers=headers, cookies=cookies)
+        except:
+            print(traceback.format_exc())
+
+        return self.format_response(fmt, ret)
 
     def format_host(self):
         '''格式化host'''
 
-        self.scheme = 'http' if not self.config.with_ssl else 'https'
-        self.host = self.config.host
-        self.port = self.config.port
-        self.base_path = self.config.base_path
+        self.scheme = 'http' if not self.app_config.with_ssl else 'https'
+        self.host = self.app_config.host
+        self.port = self.app_config.port
+        self.base_path = self.app_config.base_path
 
         self.base_url = f'{self.scheme}://{self.host}:{self.port}/{self.base_path}'
+
+    def make_storer(self):
+        self.storer = redis.Redis(self.http_config.redis_conf)
 
     def test_auto(self):
         for data, rtype in self.struct:
@@ -170,55 +247,15 @@ class HttpTester(object):
             print('return data:')
             print(data)
 
-    def http_call(self, data):
 
-        return self._http_call(
-            data=data,
-            method=self.method,
-            datatype=self.datatype
-        )
+    def format_data(self, datatype, data):
+        pass
 
-    def _http_call(self,
-        method: str='get',
-        data: dict=None,
-        datatype: str='json',
-        with_ses: bool=True,
-        with_token: bool=False,
-        fmt: str='default'
-    ):
-        '''调用http接口
+    def format_response(self, fmt, ret):
+        if fmt == 'default':
+            return ret
 
-        params:
-            method: 方法
-            data: 数据
-            with_ses: cookie是否带上session
-            with_token: 是否带上token
-            fmt: 格式化返回方法
-        return:
-            基于fmt
 
-        '''
-
-        if method not in self.allow_method:
-            raise ValueError('不被允许的http method')
-
-        # 准备数据
-        cookies = {}
-        headers = {}
-        data = {} if data is None else data
-        if with_ses:
-            cookies = {'sessionid': self.sessionid}
-        if with_token:
-            headers = {'token': self.token}
-
-        # 调用
-        func = getattr(self.httper, method)
-        try:
-            ret = func(self.host, data, headers=headers, cookies=cookies)
-            ret = ret.json()
-        except:
-            print(traceback.format_exc())
-        return ret
 
 class SessionMixin(object):
 

@@ -8,4 +8,8 @@ class SolarBase(HttpTester):
     ses_del_url = '/solar/v1/user/logout'
     ses_data = {'username': '14000000000', 'password': 'qfpay123456'}
 
+    def before_http_call(self):
+
+        self._http_call()
+
 
